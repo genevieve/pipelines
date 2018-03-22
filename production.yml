@@ -77,10 +77,6 @@ jobs:
       trigger: true
     - get: ops-files
       resource: cf-deployment
-    - get: vars-files
-      resource: bbl-state
-    - get: vars-store
-      resource: bbl-state
   - task: bosh-deploy-cf
     file: cf-deployment-concourse-tasks/bosh-deploy/task.yml
     params:
@@ -89,10 +85,9 @@ jobs:
       SYSTEM_DOMAIN: {{production_domain}}
       OPS_FILES: "operations/use-compiled-releases.yml"
       USE_VARS_STORE: false
-  - put: bbl-state
-    params:
-      rebase: true
-      repository: updated-vars-store
+    input_mapping:
+      vars-files: bbl-state
+      vars-store: bbl-state
 
 - name: bosh-delete-cf
   plan:
