@@ -13,7 +13,7 @@ resources:
   type: git
   source:
     branch: master
-    uri: https://github.com/cloudfoundry/infrastructure-ci-bbl-states.git
+    uri: git@github.com:cloudfoundry/infrastructure-ci-bbl-states.git
     private_key: {{github_private_key}}
 
 - name: cf-deployment-concourse-tasks
