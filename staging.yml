@@ -78,7 +78,7 @@ jobs:
       passed: [bosh-upload-stemcell]
       trigger: true
     - get: ops-files
-      resource: bbl-state
+      resource: cf-deployment
     - get: vars-files
       resource: bbl-state
     - get: vars-store
