@@ -1,0 +1,18 @@
+groups:
+- name: staging
+  jobs:
+  - bbl-up
+  - bosh-upload-stemcell
+  - bosh-deploy-cf
+  - run-cf-acceptance-tests
+  - bosh-delete-cf
+  - bbl-down
+
+resources:
+- name: bosh-bootloader
+
+- name: cf-deployment-concourse-tasks
+  type: git
+  source:
+    branch: master
+    uri: https://github.com/cloudfoundry/cf-deployment-concourse-tasks.git
