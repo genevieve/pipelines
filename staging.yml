@@ -9,10 +9,115 @@ groups:
   - bbl-down
 
 resources:
-- name: bosh-bootloader
+- name: bbl-states
+  type: git
+  source:
+    branch: master
+    uri: https://github.com/cloudfoundry/infrastructure-ci-bbl-states.git
 
 - name: cf-deployment-concourse-tasks
   type: git
   source:
     branch: master
     uri: https://github.com/cloudfoundry/cf-deployment-concourse-tasks.git
+
+- name: cf-deployment
+  type: git
+  source:
+    branch: master
+    uri: https://github.com/cloudfoundry/cf-deployment.git
+
+jobs:
+- name: bbl-up
+  serial: true
+  plan:
+  - aggregate:
+    - get: cf-deployment-concourse-tasks
+    - get: bbl-state
+      resource: bbl-states
+    - get: bbl-config
+      resource: bbl-states
+  - task: bbl-up
+    file: cf-deployment-concourse-tasks/bbl-up/task.yml
+    params:
+      BBL_STATE_DIR: staging
+      BBL_IAAS: gcp
+      BBL_GCP_SERVICE_ACCOUNT_KEY: {{service_account_key}}
+      BBL_GCP_REGION: {{region}}
+      BBL_LB_CERT: {{ssl_cert}}
+      BBL_LB_KEY: {{ssl_cert_private_key}}
+      LB_DOMAIN: {{staging_domain}}
+      BBL_ENV_NAME: staging
+
+- name: bosh-upload-stemcell
+  plan:
+  - aggregate:
+    - get: cf-deployment
+    - get: cf-deployment-concourse-tasks
+    - get: bbl-state
+      resource: bbl-state-staging
+      passed: [bosh-upload-stemcell]
+      trigger: true
+  - task: bosh-upload-stemcell-from-cf-deployment
+    file: cf-deployment-concourse-tasks/bosh-upload-stemcell-from-cf-deployment/task.yml
+
+- name: bosh-deploy-cf
+  plan:
+  - aggregate:
+    - get: cf-deployment
+    - get: cf-deployment-concourse-tasks
+    - get: bbl-state
+      resource: bbl-states
+      passed: [bosh-upload-stemcell]
+      trigger: true
+    - get: ops-files
+      resource: bbl-states
+    - get: vars-files
+      resource: bbl-states
+    - get: vars-store
+      resource: bbl-states
+  - task: bosh-deploy-cf
+    file: cf-deployment-concourse-tasks/bosh-deploy/task.yml
+    params:
+      BBL_STATE_DIR: staging
+      BBL_GCP_SERVICE_ACCOUNT_KEY: {{service_account_key}}
+      SYSTEM_DOMAIN: {{staging_domain}}
+      OPS_FILES: "operations/use-compiled-releases.yml"
+
+- name: bosh-delete-cf
+  plan:
+  - aggregate:
+    - get: cf-deployment-concourse-tasks
+    - get: bbl-state
+      resource: bbl-states
+      passed: [bosh-deploy-cf]
+  - task: bosh-delete-cf
+    file: cf-deployment-concourse-tasks/bosh-delete-deployment/task.yml
+    params:
+      BBL_STATE_DIR: staging
+
+- name: bosh-cleanup
+  plan:
+  - aggregate:
+    - get: cf-deployment-concourse-tasks
+    - get: bbl-state
+      resource: bbl-states
+      passed: [bosh-delete-cf]
+  - task: bosh-cleanup
+    file: cf-deployment-concourse-tasks/bosh-cleanup/task.yml
+    params:
+      BBL_STATE_DIR: staging
+
+- name: bbl-destroy
+  plan:
+  - aggregate:
+    - get: cf-deployment-concourse-tasks
+    - get: bbl-state
+      resource: bbl-states
+      passed: [bosh-cleanup]
+  - task: bbl-destroy
+    file: cf-deployment-concourse-tasks/bbl-destroy/task.yml
+    params:
+      BBL_STATE_DIR: staging
+      BBL_IAAS: gcp
+      BBL_GCP_SERVICE_ACCOUNT_KEY: {{service_account_key}}
