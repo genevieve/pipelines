@@ -4,9 +4,9 @@ groups:
   - bbl-up
   - bosh-upload-stemcell
   - bosh-deploy-cf
-  - run-cf-acceptance-tests
+  - bosh-cleanup
   - bosh-delete-cf
-  - bbl-down
+  - bbl-destroy
 
 resources:
 - name: bbl-state
