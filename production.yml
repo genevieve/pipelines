@@ -1,3 +1,4 @@
+# Pipeline for production environment.
 groups:
 - name: production
   jobs:
@@ -15,9 +16,6 @@ resources:
     branch: master
     uri: git@github.com:cloudfoundry/infrastructure-ci-bbl-states.git
     private_key: {{github_private_key}}
-  # bbl-state-dir/
-  #   staging/
-  #   production/
 
 - name: cf-deployment-concourse-tasks
   type: git

@@ -1,12 +1,12 @@
-# Pipeline for staging environment.
+# Pipeline for updating concourse environment.
 groups:
-- name: staging
+- name: concourse
   jobs:
   - bbl-up
   - bosh-upload-stemcell
-  - bosh-deploy-cf
+  - bosh-deploy-concourse
   - bosh-cleanup
-  - bosh-delete-cf
+  - bosh-delete-concourse
   - bbl-destroy
 
 resources:
@@ -23,11 +23,11 @@ resources:
     branch: master
     uri: https://github.com/cloudfoundry/cf-deployment-concourse-tasks.git
 
-- name: cf-deployment
+- name: concourse-deployment
   type: git
   source:
     branch: master
-    uri: https://github.com/cloudfoundry/cf-deployment.git
+    uri: https://github.com/cloudfoundry/concourse-deployment.git
 
 jobs:
 - name: bbl-up
@@ -41,14 +41,14 @@ jobs:
   - task: bbl-up
     file: cf-deployment-concourse-tasks/bbl-up/task.yml
     params:
-      BBL_STATE_DIR: staging
+      BBL_STATE_DIR: concourse
       BBL_IAAS: gcp
       BBL_GCP_SERVICE_ACCOUNT_KEY: {{service_account_key}}
       BBL_GCP_REGION: {{region}}
       BBL_LB_CERT: {{ssl_cert}}
       BBL_LB_KEY: {{ssl_cert_private_key}}
-      LB_DOMAIN: {{staging_domain}}
-      BBL_ENV_NAME: staging
+      LB_DOMAIN: {{concourse_domain}}
+      BBL_ENV_NAME: concourse
   - put: bbl-state
     params:
       rebase: true
@@ -57,36 +57,36 @@ jobs:
 - name: bosh-upload-stemcell
   plan:
   - aggregate:
-    - get: cf-deployment
+    - get: concourse-deployment
     - get: cf-deployment-concourse-tasks
     - get: bbl-state
       passed: [bbl-up]
       trigger: true
   - task: bosh-upload-stemcell-from-cf-deployment
-    file: cf-deployment-concourse-tasks/bosh-upload-stemcell-from-cf-deployment/task.yml
+    file: cf-deployment-concourse-tasks/bosh-upload-stemcell-from-concourse-deployment/task.yml
     params:
-      BBL_STATE_DIR: staging
+      BBL_STATE_DIR: concourse
 
-- name: bosh-deploy-cf
+- name: bosh-deploy-concourse
   plan:
   - aggregate:
-    - get: cf-deployment
+    - get: concourse-deployment
     - get: cf-deployment-concourse-tasks
     - get: bbl-state
       passed: [bosh-upload-stemcell]
       trigger: true
     - get: ops-files
-      resource: cf-deployment
+      resource: concourse-deployment
     - get: vars-files
       resource: bbl-state
     - get: vars-store
       resource: bbl-state
-  - task: bosh-deploy-cf
+  - task: bosh-deploy-concourse
     file: cf-deployment-concourse-tasks/bosh-deploy/task.yml
     params:
-      BBL_STATE_DIR: staging
+      BBL_STATE_DIR: concourse
       BBL_GCP_SERVICE_ACCOUNT_KEY: {{service_account_key}}
-      SYSTEM_DOMAIN: {{staging_domain}}
+      SYSTEM_DOMAIN: {{concourse_domain}}
       OPS_FILES: "operations/use-compiled-releases.yml"
       USE_VARS_STORE: false
   - put: bbl-state
@@ -94,16 +94,16 @@ jobs:
       rebase: true
       repository: updated-vars-store
 
-- name: bosh-delete-cf
+- name: bosh-delete-concourse
   plan:
   - aggregate:
     - get: cf-deployment-concourse-tasks
     - get: bbl-state
-      passed: [bosh-deploy-cf]
-  - task: bosh-delete-cf
+      passed: [bosh-deploy-concourse]
+  - task: bosh-delete-concourse
     file: cf-deployment-concourse-tasks/bosh-delete-deployment/task.yml
     params:
-      BBL_STATE_DIR: staging
+      BBL_STATE_DIR: concourse
 
 - name: bosh-cleanup
   plan:
@@ -111,11 +111,11 @@ jobs:
     - get: cf-deployment-concourse-tasks
     - get: bbl-state
       resource: bbl-state
-      passed: [bosh-delete-cf]
+      passed: [bosh-delete-concourse]
   - task: bosh-cleanup
     file: cf-deployment-concourse-tasks/bosh-cleanup/task.yml
     params:
-      BBL_STATE_DIR: staging
+      BBL_STATE_DIR: concourse
 
 - name: bbl-destroy
   plan:
@@ -126,7 +126,7 @@ jobs:
   - task: bbl-destroy
     file: cf-deployment-concourse-tasks/bbl-destroy/task.yml
     params:
-      BBL_STATE_DIR: staging
+      BBL_STATE_DIR: concourse
       BBL_IAAS: gcp
       BBL_GCP_SERVICE_ACCOUNT_KEY: {{service_account_key}}
   - put: bbl-state
