@@ -9,11 +9,12 @@ groups:
   - bbl-down
 
 resources:
-- name: bbl-states
+- name: bbl-state
   type: git
   source:
     branch: master
     uri: https://github.com/cloudfoundry/infrastructure-ci-bbl-states.git
+    private_key: {{github_private_key}}
 
 - name: cf-deployment-concourse-tasks
   type: git
@@ -34,9 +35,8 @@ jobs:
   - aggregate:
     - get: cf-deployment-concourse-tasks
     - get: bbl-state
-      resource: bbl-states
     - get: bbl-config
-      resource: bbl-states
+      resource: bbl-state
   - task: bbl-up
     file: cf-deployment-concourse-tasks/bbl-up/task.yml
     params:
@@ -55,7 +55,6 @@ jobs:
     - get: cf-deployment
     - get: cf-deployment-concourse-tasks
     - get: bbl-state
-      resource: bbl-state-staging
       passed: [bosh-upload-stemcell]
       trigger: true
   - task: bosh-upload-stemcell-from-cf-deployment
@@ -67,15 +66,14 @@ jobs:
     - get: cf-deployment
     - get: cf-deployment-concourse-tasks
     - get: bbl-state
-      resource: bbl-states
       passed: [bosh-upload-stemcell]
       trigger: true
     - get: ops-files
-      resource: bbl-states
+      resource: bbl-state
     - get: vars-files
-      resource: bbl-states
+      resource: bbl-state
     - get: vars-store
-      resource: bbl-states
+      resource: bbl-state
   - task: bosh-deploy-cf
     file: cf-deployment-concourse-tasks/bosh-deploy/task.yml
     params:
@@ -89,7 +87,6 @@ jobs:
   - aggregate:
     - get: cf-deployment-concourse-tasks
     - get: bbl-state
-      resource: bbl-states
       passed: [bosh-deploy-cf]
   - task: bosh-delete-cf
     file: cf-deployment-concourse-tasks/bosh-delete-deployment/task.yml
@@ -101,7 +98,7 @@ jobs:
   - aggregate:
     - get: cf-deployment-concourse-tasks
     - get: bbl-state
-      resource: bbl-states
+      resource: bbl-state
       passed: [bosh-delete-cf]
   - task: bosh-cleanup
     file: cf-deployment-concourse-tasks/bosh-cleanup/task.yml
@@ -113,7 +110,6 @@ jobs:
   - aggregate:
     - get: cf-deployment-concourse-tasks
     - get: bbl-state
-      resource: bbl-states
       passed: [bosh-cleanup]
   - task: bbl-destroy
     file: cf-deployment-concourse-tasks/bbl-destroy/task.yml
