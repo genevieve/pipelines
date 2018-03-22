@@ -48,6 +48,10 @@ jobs:
       BBL_LB_KEY: {{ssl_cert_private_key}}
       LB_DOMAIN: {{staging_domain}}
       BBL_ENV_NAME: staging
+  - put: bbl-state
+    params:
+      rebase: true
+      repository: updated-bbl-state
 
 - name: bosh-upload-stemcell
   plan:
@@ -81,6 +85,11 @@ jobs:
       BBL_GCP_SERVICE_ACCOUNT_KEY: {{service_account_key}}
       SYSTEM_DOMAIN: {{staging_domain}}
       OPS_FILES: "operations/use-compiled-releases.yml"
+      USE_VARS_STORE: false
+  - put: bbl-state
+    params:
+      rebase: true
+      repository: updated-vars-store
 
 - name: bosh-delete-cf
   plan:
@@ -117,3 +126,7 @@ jobs:
       BBL_STATE_DIR: staging
       BBL_IAAS: gcp
       BBL_GCP_SERVICE_ACCOUNT_KEY: {{service_account_key}}
+  - put: bbl-state
+    params:
+      rebase: true
+      repository: updated-bbl-state
