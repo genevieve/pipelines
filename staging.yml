@@ -59,7 +59,7 @@ jobs:
     - get: cf-deployment
     - get: cf-deployment-concourse-tasks
     - get: bbl-state
-      passed: [bosh-upload-stemcell]
+      passed: [bbl-up]
       trigger: true
   - task: bosh-upload-stemcell-from-cf-deployment
     file: cf-deployment-concourse-tasks/bosh-upload-stemcell-from-cf-deployment/task.yml
