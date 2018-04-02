@@ -81,20 +81,20 @@ jobs:
     - get: bbl-state
       passed: [bosh-upload-stemcell]
       trigger: true
-    - get: ops-files
-      resource: concourse-deployment
-    - get: vars-files
-      resource: bbl-state
-    - get: vars-store
-      resource: bbl-state
   - task: bosh-deploy-concourse
     file: cf-deployment-concourse-tasks/bosh-deploy/task.yml
     params:
       BBL_STATE_DIR: concourse
       BBL_GCP_SERVICE_ACCOUNT_KEY: {{service_account_key}}
       SYSTEM_DOMAIN: {{concourse_domain}}
-      OPS_FILES: "operations/use-compiled-releases.yml"
+      MANIFEST_FILE: cluster/concourse.yml
+      VARS_FILES: "versions.yml"
       USE_VARS_STORE: false
+    input_mapping:
+      cf-deployment: concourse-deployment
+      ops-files: concourse-deployment
+      vars-files: concourse-deployment
+      vars-store: bbl-state
   - put: bbl-state
     params:
       rebase: true

@@ -4,11 +4,10 @@ set -eux
 function upload_stemcell() {
   set +e
   local existing_stemcell
-  existing_stemcell=$(bosh stemcells | grep "${os}" | awk '{print $2}' | tr -d "\*" | grep ^"${version}"$ )
+  existing_stemcell=$(bosh stemcells | grep "trusty" | awk '{print $2}' | tr -d "\*")
   set -e
 
   if [ "${existing_stemcell}" ]; then
-    echo "Task upload-latest-trusty-stemcell:"
     echo "Stemcell already exists.  Exiting..."
     return
   fi
@@ -24,7 +23,6 @@ function main() {
   popd
   set -ux
   upload_stemcell
-  pkill ssh || true
 }
 
 main
