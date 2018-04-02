@@ -4,6 +4,7 @@ groups:
   jobs:
   - bbl-up
   - bosh-upload-stemcell
+  - concourse-url
   - bosh-deploy-concourse
   - bosh-cleanup
   - bosh-delete-concourse
@@ -51,6 +52,7 @@ jobs:
       BBL_IAAS: gcp
       BBL_GCP_SERVICE_ACCOUNT_KEY: {{service_account_key}}
       BBL_GCP_REGION: {{region}}
+      BBL_LB_TYPE: concourse
       BBL_LB_CERT: {{ssl_cert}}
       BBL_LB_KEY: {{ssl_cert_private_key}}
       LB_DOMAIN: {{concourse_domain}}
@@ -73,13 +75,46 @@ jobs:
       BBL_GCP_SERVICE_ACCOUNT_KEY: {{service_account_key}}
       BBL_STATE_DIR: concourse
 
+- name: concourse-url
+  plan:
+  - aggregate:
+    - get: bbl-state
+      passed: [bosh-upload-stemcell]
+      trigger: true
+  - task: get-concourse-url
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+          tag: v5.7.0
+      inputs:
+      - name: bbl-state
+      params:
+        BBL_STATE_DIR: concourse
+      run:
+        path: bash
+        args:
+          - "-c"
+          - "echo external_url:$(bbl lbs --state-dir bbl-state/${BBL_STATE_DIR} | cut -d ':' -f 2 | tr -d ' ') >> bbl-state/${BBL_STATE_DIR}/concourse-defaults.yml"
+    params:
+      BBL_STATE_DIR: concourse
+  - put: bbl-state
+    params:
+      rebase: true
+      repository: bbl-state
+
+# TODO: Provide all defaults
+# TODO: Join concourse-bosh-deployment ops-files and vars-files with bbl-state-dir ops-files or vars-files
+
 - name: bosh-deploy-concourse
   plan:
   - aggregate:
     - get: concourse-deployment
     - get: cf-deployment-concourse-tasks
     - get: bbl-state
-      passed: [bosh-upload-stemcell]
+      passed: [concourse-url]
       trigger: true
   - task: bosh-deploy-concourse
     file: cf-deployment-concourse-tasks/bosh-deploy/task.yml
@@ -88,6 +123,7 @@ jobs:
       BBL_GCP_SERVICE_ACCOUNT_KEY: {{service_account_key}}
       SYSTEM_DOMAIN: {{concourse_domain}}
       MANIFEST_FILE: cluster/concourse.yml
+      OPS_FILES: "cluster/operations/no-auth.yml cluster/operations/privileged-http.yml cluster/operations/privileged-https.yml cluster/operations/tls.yml cluster/operations/tls-vars.yml cluster/operations/web-network-extension.yml"
       VARS_FILES: "versions.yml"
       USE_VARS_STORE: false
     input_mapping:

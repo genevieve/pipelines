@@ -1,3 +1,3 @@
 # pipelines
 
-Pipelines for automating with bbl
+Staging pipeline, production pipeline, and concourse pipeline for updating concourse.
