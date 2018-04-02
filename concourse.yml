@@ -71,6 +71,7 @@ jobs:
     file: ci/tasks/upload-stemcell.yml
     params:
       BBL_GCP_SERVICE_ACCOUNT_KEY: {{service_account_key}}
+      BBL_STATE_DIR: concourse
 
 - name: bosh-deploy-concourse
   plan:
