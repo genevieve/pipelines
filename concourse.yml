@@ -4,7 +4,6 @@ groups:
   jobs:
   - bbl-up
   - bosh-upload-stemcell
-  - concourse-url
   - bosh-deploy-concourse
   - bosh-cleanup
   - bosh-delete-concourse
@@ -45,6 +44,8 @@ jobs:
     - get: bbl-state
     - get: bbl-config
       resource: bbl-state
+    - get: pipelines
+      resource: ci
   - task: bbl-up
     file: cf-deployment-concourse-tasks/bbl-up/task.yml
     params:
@@ -57,6 +58,10 @@ jobs:
       BBL_LB_KEY: {{ssl_cert_private_key}}
       LB_DOMAIN: {{concourse_domain}}
       BBL_ENV_NAME: concourse
+  - task: get-concourse-url
+    file: ci/tasks/concourse-external-url.yml
+    params:
+      BBL_STATE_DIR: concourse
   - put: bbl-state
     params:
       rebase: true
@@ -75,36 +80,6 @@ jobs:
       BBL_GCP_SERVICE_ACCOUNT_KEY: {{service_account_key}}
       BBL_STATE_DIR: concourse
 
-- name: concourse-url
-  plan:
-  - aggregate:
-    - get: bbl-state
-      passed: [bosh-upload-stemcell]
-      trigger: true
-  - task: get-concourse-url
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
-          tag: v5.7.0
-      inputs:
-      - name: bbl-state
-      params:
-        BBL_STATE_DIR: concourse
-      run:
-        path: bash
-        args:
-          - "-c"
-          - "echo external_url:$(bbl lbs --state-dir bbl-state/${BBL_STATE_DIR} | cut -d ':' -f 2 | tr -d ' ') >> bbl-state/${BBL_STATE_DIR}/concourse-defaults.yml"
-    params:
-      BBL_STATE_DIR: concourse
-  - put: bbl-state
-    params:
-      rebase: true
-      repository: bbl-state
-
 # TODO: Provide all defaults
 # TODO: Join concourse-bosh-deployment ops-files and vars-files with bbl-state-dir ops-files or vars-files
 
@@ -114,7 +89,7 @@ jobs:
     - get: concourse-deployment
     - get: cf-deployment-concourse-tasks
     - get: bbl-state
-      passed: [concourse-url]
+      passed: [bosh-upload-stemcell]
       trigger: true
   - task: bosh-deploy-concourse
     file: cf-deployment-concourse-tasks/bosh-deploy/task.yml
@@ -129,7 +104,7 @@ jobs:
     input_mapping:
       cf-deployment: concourse-deployment
       ops-files: concourse-deployment
-      vars-files: concourse-deployment
+      vars-files: bbl-state
       vars-store: bbl-state
   - put: bbl-state
     params:

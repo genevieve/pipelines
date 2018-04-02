@@ -1,0 +1,21 @@
+---
+platform: linux
+
+image_resource:
+  type: docker-image
+  source:
+    repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+    tag: v5.7.0
+
+inputs:
+- name: bbl-state
+- name: ci
+
+outputs:
+- name: updated-bbl-state
+
+run:
+  path: ci/tasks/concourse-external-url
+
+params:
+  BBL_STATE_DIR: bbl-state

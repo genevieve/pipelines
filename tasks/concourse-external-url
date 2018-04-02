@@ -1,0 +1,16 @@
+#!/bin/bash
+
+function main() {
+  set +ux
+  pushd "bbl-state/${BBL_STATE_DIR}"
+
+    local url
+    url=$(bbl lbs | cut -d ':' -f 2 | tr -d ' ' | head -1)
+
+    echo external_url:${url} >> concourse-defaults.yml
+
+  popd
+  set -ux
+}
+
+main
