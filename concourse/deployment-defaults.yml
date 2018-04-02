@@ -1,0 +1,8 @@
+network_name: 'private'
+web_network_name: 'private'
+web_vm_type: 'default'
+web_network_vm_extension: 'lb'
+db_vm_type: 'default'
+db_persistent_disk_type: '1GB'
+worker_vm_type: 'default'
+deployment_name: 'concourse'
