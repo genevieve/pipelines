@@ -66,6 +66,7 @@ jobs:
     file: cf-deployment-concourse-tasks/bosh-upload-stemcell-from-cf-deployment/task.yml
     params:
       BBL_STATE_DIR: concourse
+      MANIFEST_FILE: concourse-deployment.yml
     input_mapping:
       cf-deployment: concourse-deployment
 
