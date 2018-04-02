@@ -44,8 +44,7 @@ jobs:
     - get: bbl-state
     - get: bbl-config
       resource: bbl-state
-    - get: pipelines
-      resource: ci
+    - get: ci
   - task: bbl-up
     file: cf-deployment-concourse-tasks/bbl-up/task.yml
     params:
@@ -58,10 +57,12 @@ jobs:
       BBL_LB_KEY: {{ssl_cert_private_key}}
       LB_DOMAIN: {{concourse_domain}}
       BBL_ENV_NAME: concourse
-  - task: get-concourse-url
-    file: ci/tasks/concourse-external-url.yml
+  - task: get-concourse-defaults
+    file: ci/tasks/concourse-defaults.yml
     params:
       BBL_STATE_DIR: concourse
+    input_mapping:
+      bbl-state: updated-bbl-state
   - put: bbl-state
     params:
       rebase: true
@@ -80,7 +81,6 @@ jobs:
       BBL_GCP_SERVICE_ACCOUNT_KEY: {{service_account_key}}
       BBL_STATE_DIR: concourse
 
-# TODO: Provide all defaults
 # TODO: Join concourse-bosh-deployment ops-files and vars-files with bbl-state-dir ops-files or vars-files
 
 - name: bosh-deploy-concourse

@@ -1,0 +1,25 @@
+#!/bin/bash
+
+function main() {
+  set +ux
+  pushd "bbl-state/${BBL_STATE_DIR}"
+
+    local url
+    url=$(bbl lbs | cut -d ':' -f 2 | tr -d ' ' | head -1)
+
+    echo external_url: ${url} > concourse-defaults.yml
+
+    echo network_name: 'private' >> concourse-defaults.yml
+    echo web_network_name: 'private' >> concourse-defaults.yml
+    echo web_vm_type: 'default' >> concourse-defaults.yml
+    echo web_network_vm_extension: 'lb' >> concourse-defaults.yml
+    echo db_vm_type: 'default' >> concourse-defaults.yml
+    echo db_persistent_disk_type: '1GB' >> concourse-defaults.yml
+    echo worker_vm_type: 'default' >> concourse-defaults.yml
+    echo deployment_name: 'concourse' >> concourse-defaults.yml
+
+  popd
+  set -ux
+}
+
+main
