@@ -29,6 +29,12 @@ resources:
     branch: master
     uri: https://github.com/concourse/concourse-bosh-deployment.git
 
+- name: ci
+  type: git
+  source:
+    branch: master
+    uri: https://github.com/genevieve/pipelines.git
+
 jobs:
 - name: bbl-up
   serial: true
@@ -57,18 +63,14 @@ jobs:
 - name: bosh-upload-stemcell
   plan:
   - aggregate:
-    - get: concourse-deployment
-    - get: cf-deployment-concourse-tasks
+    - get: ci
     - get: bbl-state
       passed: [bbl-up]
       trigger: true
   - task: bosh-upload-stemcell
-    file: cf-deployment-concourse-tasks/bosh-upload-stemcell-from-cf-deployment/task.yml
+    file: ci/tasks/upload-stemcell.yml
     params:
-      BBL_STATE_DIR: concourse
-      MANIFEST_FILE: concourse-deployment.yml
-    input_mapping:
-      cf-deployment: concourse-deployment
+      BBL_GCP_SERVICE_ACCOUNT_KEY: {{service_account_key}}
 
 - name: bosh-deploy-concourse
   plan:

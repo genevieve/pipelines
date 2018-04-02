@@ -1,0 +1,31 @@
+#!/bin/bash
+set -eux
+
+function upload_stemcell() {
+  set +e
+  local existing_stemcell
+  existing_stemcell=$(bosh stemcells | grep "${os}" | awk '{print $2}' | tr -d "\*" | grep ^"${version}"$ )
+  set -e
+
+  if [ "${existing_stemcell}" ]; then
+    echo "Task upload-latest-trusty-stemcell:"
+    echo "Stemcell already exists.  Exiting..."
+    return
+  fi
+
+  bosh -n upload-stemcell "https://bosh.io/d/stemcells/bosh-google-kvm-ubuntu-trusty-go_agent"
+  set -x
+}
+
+function main() {
+  set +ux
+  pushd env-repo/"${BBL_STATE_DIR}"
+    eval "$(bbl print-env)"
+  popd
+  set -ux
+  upload_stemcell
+  pkill ssh || true
+}
+
+main
+
